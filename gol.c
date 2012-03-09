@@ -61,10 +61,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         HDC hdc;
         PAINTSTRUCT ps;
         hdc = BeginPaint(hwnd, &ps);
+        RECT rect;
+        rect.left = 50;
+        rect.top = 50;
+        rect.right = 55;
+        rect.bottom = 55;
 
-        Ellipse(hdc, 20, 20, 160, 160);
-        Rectangle(hdc, 50, 50, 90, 90);
-        Rectangle(hdc, 100, 50, 140, 90);
+        FillRect(hdc, &rect, CreateSolidBrush(RGB(197,0,11)));
 
         EndPaint(hwnd, &ps);
         break;
