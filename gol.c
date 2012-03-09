@@ -1,9 +1,54 @@
 #include <windows.h>
 
 const char g_szClassName[] = "myWindowClass";
+const int MOVE_DELTA = 2;
+const int CELL_SIZE = 5;
+const int ID_TIMER = 1;
+
+typedef struct _CELL {
+  int x;
+  int y;
+
+  int dx;
+  int dy;
+}CELL;
+
+CELL g_cell;
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow);
+void UpdateCell(RECT* rect);
+void DrawCell(HDC hdc);
+
+void UpdateCell(RECT* rect) {
+  g_cell.x += g_cell.dx;
+  g_cell.y += g_cell.dy;
+
+  if(g_cell.x < 0) {
+    g_cell.x = 0;
+    g_cell.dx = MOVE_DELTA;
+  } else if (g_cell.x + CELL_SIZE > rect->right) {
+    g_cell.x = rect->right - CELL_SIZE;
+    g_cell.dx = -MOVE_DELTA;
+  }
+
+  if(g_cell.y < 0) {
+    g_cell.y = 0;
+    g_cell.dy = MOVE_DELTA;
+  } else if (g_cell.y + CELL_SIZE > rect->bottom) {
+    g_cell.y = rect->bottom - CELL_SIZE;
+    g_cell.dy = -MOVE_DELTA;
+  }
+}
+void DrawCell(HDC hdc) {
+  RECT rect;
+  rect.left = g_cell.x;
+  rect.top = g_cell.y;
+  rect.right = g_cell.x + CELL_SIZE;
+  rect.bottom = g_cell.y + CELL_SIZE;
+
+  FillRect(hdc, &rect, CreateSolidBrush(RGB(197,0,11)));
+}
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
   WNDCLASSEX wc;
@@ -46,7 +91,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   ShowWindow(hwnd, nCmdShow);
   UpdateWindow(hwnd);
 
-  // Step 3: The Message Loop
   while(GetMessage(&Msg, NULL, 0, 0) > 0) {
     TranslateMessage(&Msg);
     DispatchMessage(&Msg);
@@ -56,18 +100,39 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
   switch(msg) {
+    case WM_CREATE: 
+      {
+			  UINT ret;
+
+        g_cell.dx = MOVE_DELTA;
+        g_cell.dy = MOVE_DELTA;
+
+			  ret = SetTimer(hwnd, ID_TIMER, 50, NULL);
+			  if(ret == 0)
+				  MessageBox(hwnd, "Could not SetTimer()!", "Error", MB_OK | MB_ICONEXCLAMATION);
+      }
+    case WM_TIMER:
+      {
+        HDC hdc;
+        RECT rcClient;
+        hdc = GetDC(hwnd);
+
+        GetClientRect(hwnd, &rcClient);
+        UpdateCell(&rcClient);
+        DrawCell(hdc);
+
+        ReleaseDC(hwnd, hdc);
+        break;
+      }
     case WM_PAINT:
       {
         HDC hdc;
         PAINTSTRUCT ps;
+        RECT rcClient;
         hdc = BeginPaint(hwnd, &ps);
-        RECT rect;
-        rect.left = 50;
-        rect.top = 50;
-        rect.right = 55;
-        rect.bottom = 55;
 
-        FillRect(hdc, &rect, CreateSolidBrush(RGB(197,0,11)));
+        GetClientRect(hwnd, &rcClient);
+        DrawCell(hdc);
 
         EndPaint(hwnd, &ps);
         break;
@@ -76,6 +141,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
       DestroyWindow(hwnd);
       break;
     case WM_DESTROY:
+			KillTimer(hwnd, ID_TIMER);
       PostQuitMessage(0);
       break;
     default:
