@@ -20,6 +20,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 void UpdateCell(RECT* rect);
 void DrawCell(HDC hdc);
 
+
 void UpdateCell(RECT* rect) {
   g_cell.x += g_cell.dx;
   g_cell.y += g_cell.dy;
@@ -120,6 +121,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         GetClientRect(hwnd, &rcClient);
         UpdateCell(&rcClient);
         DrawCell(hdc);
+
+        // Clear the screen so there is no trace of the last iteration
+        InvalidateRect(hwnd,NULL,TRUE);
 
         ReleaseDC(hwnd, hdc);
         break;
